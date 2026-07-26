@@ -7,6 +7,8 @@ import re
 from langchain_groq import ChatGroq
 from dotenv import load_dotenv
 
+from theme import inject_theme, render_brand
+
 load_dotenv()
 
 # ----------------------------------------------------------------------------
@@ -21,193 +23,13 @@ st.set_page_config(
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# ----------------------------------------------------------------------------
-# Theme / CSS  (purple dashboard look)
-# ----------------------------------------------------------------------------
-st.markdown(
-    """
-    <style>
-        :root {
-            --purple: #7C3AED;
-            --purple-light: #A78BFA;
-            --purple-soft: rgba(124, 58, 237, 0.12);
-            --bg-dark: #12101B;
-            --bg-panel: #1B1830;
-            --border: rgba(255,255,255,0.08);
-            --text-dim: #9895AC;
-        }
-
-        .stApp {
-            background-color: var(--bg-dark);
-        }
-
-        /* Sidebar = dark navy/purple nav rail */
-        section[data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #16132A 0%, #1B1733 100%);
-            border-right: 1px solid var(--border);
-        }
-        section[data-testid="stSidebar"] * {
-            color: #E9E7F5;
-        }
-
-        .brand {
-            font-size: 1.3rem;
-            font-weight: 800;
-            padding: 0.4rem 0 1.2rem 0;
-        }
-        .brand span {
-            color: var(--purple-light);
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            padding: 0.55rem 0.8rem;
-            border-radius: 10px;
-            margin-bottom: 0.25rem;
-            font-size: 0.93rem;
-            color: #B7B4CC;
-        }
-        .nav-item.active {
-            background: var(--purple);
-            color: white !important;
-            font-weight: 600;
-        }
-
-        /* Cards */
-        .panel {
-            background: var(--bg-panel);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.4rem 1.5rem;
-            margin-bottom: 1.1rem;
-        }
-        .panel h4 {
-            margin-top: 0;
-            color: #D9D6EC;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            font-weight: 700;
-        }
-
-        /* Score gauge */
-        .gauge-wrap {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 0.6rem 0 0.3rem 0;
-        }
-        .gauge {
-            width: 170px;
-            height: 170px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-        .gauge-inner {
-            width: 132px;
-            height: 132px;
-            border-radius: 50%;
-            background: var(--bg-panel);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .gauge-score {
-            font-size: 2.1rem;
-            font-weight: 800;
-            color: #F1EFFB;
-        }
-        .gauge-label {
-            font-size: 0.85rem;
-            font-weight: 700;
-            margin-top: 0.6rem;
-            padding: 0.15rem 0.9rem;
-            border-radius: 999px;
-        }
-
-        /* Suggestions list */
-        .suggestion-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.55rem 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.93rem;
-            color: #DDDAEE;
-        }
-        .suggestion-row:last-child { border-bottom: none; }
-        .badge-good { color: #4ADE80; font-weight: 700; }
-        .badge-warn { color: #FBBF24; font-weight: 700; }
-
-        /* Resume preview panel (right side, mimics the resume card) */
-        .resume-card {
-            background: #FBFAFF;
-            color: #1a1a2e;
-            border-radius: 16px;
-            padding: 1.8rem 2rem;
-            border: 1px solid var(--border);
-        }
-        .resume-card h2 { margin-bottom: 0; color: #14121f; }
-        .resume-role { color: var(--purple); font-weight: 700; margin-top: 0.1rem; }
-        .resume-meta { color: #6b6880; font-size: 0.85rem; margin: 0.6rem 0 1rem 0; }
-        .resume-section-title {
-            color: var(--purple);
-            font-size: 0.8rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin: 1.1rem 0 0.4rem 0;
-        }
-        .resume-body { font-size: 0.9rem; line-height: 1.55; white-space: pre-wrap; color: #2b2942; }
-
-        /* Buttons */
-        div.stButton > button {
-            width: 100%;
-            border-radius: 10px;
-            padding: 0.65rem 1rem;
-            font-weight: 700;
-            border: none;
-            background: linear-gradient(135deg, #7C3AED, #A78BFA);
-            color: white;
-        }
-        div.stButton > button:hover {
-            box-shadow: 0 6px 18px rgba(124, 58, 237, 0.4);
-            color: white;
-        }
-
-        h1, h2, h3, p, label, .stMarkdown { color: #E9E7F5; }
-        .block-container { padding-top: 1.5rem; }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+inject_theme()
 
 # ----------------------------------------------------------------------------
-# Sidebar — nav rail (styled like the mockup)
+# Sidebar
 # ----------------------------------------------------------------------------
 with st.sidebar:
-    st.markdown('<div class="brand">Resumate <span>AI</span></div>', unsafe_allow_html=True)
-
-    nav_items = [
-        ("🏠", "Dashboard", True),
-        ("👤", "Personal Info", False),
-        ("💼", "Experience", False),
-        ("🎓", "Education", False),
-        ("⭐", "Skills", False),
-        ("📁", "Projects", False),
-        ("📄", "Templates", False),
-        ("⚙️", "Settings", False),
-    ]
-    for icon, label, active in nav_items:
-        cls = "nav-item active" if active else "nav-item"
-        st.markdown(f'<div class="{cls}">{icon} &nbsp; {label}</div>', unsafe_allow_html=True)
-
+    render_brand()
     st.markdown("---")
     st.markdown("##### 📎 Upload Resume")
     uploaded_file = st.file_uploader(
@@ -291,7 +113,6 @@ st.caption("Upload a resume in the sidebar, then click **Enhance with AI** to ge
 
 left_col, right_col = st.columns([1, 1.6], gap="medium")
 
-# Defaults shown before any analysis has run
 default_score = 0
 default_suggestions = [
     {"text": "Improve impact verbs", "status": "warn"},
@@ -301,6 +122,7 @@ default_suggestions = [
 ]
 
 result_state = st.session_state.get("result")
+personal_info = st.session_state.get("personal_info")
 
 with left_col:
     st.markdown('<div class="panel"><h4>Resume Score</h4>', unsafe_allow_html=True)
@@ -320,9 +142,27 @@ with right_col:
             unsafe_allow_html=True,
         )
     elif result_state:
+        display_name = personal_info["full_name"] if personal_info and personal_info.get("full_name") else result_state["file_name"]
+        display_role = personal_info["job_title"] if personal_info and personal_info.get("job_title") else (job_role if job_role else "General Application")
+
         st.markdown('<div class="resume-card">', unsafe_allow_html=True)
-        st.markdown(f'<h2>{result_state["file_name"]}</h2>', unsafe_allow_html=True)
-        st.markdown(f'<div class="resume-role">{job_role if job_role else "General Application"}</div>', unsafe_allow_html=True)
+        st.markdown(f'<h2>{display_name}</h2>', unsafe_allow_html=True)
+        st.markdown(f'<div class="resume-role">{display_role}</div>', unsafe_allow_html=True)
+
+        if personal_info:
+            meta_bits = []
+            if personal_info.get("email"):
+                meta_bits.append(f'✉️ {personal_info["email"]}')
+            if personal_info.get("phone"):
+                meta_bits.append(f'📞 {personal_info["phone"]}')
+            if personal_info.get("location"):
+                meta_bits.append(f'📍 {personal_info["location"]}')
+            if personal_info.get("linkedin"):
+                meta_bits.append(f'🔗 {personal_info["linkedin"]}')
+            if meta_bits:
+                spans = "".join(f"<span>{b}</span>" for b in meta_bits)
+                st.markdown(f'<div class="resume-meta">{spans}</div>', unsafe_allow_html=True)
+
         st.markdown('<div class="resume-section-title">AI Feedback</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="resume-body">{result_state["feedback"]}</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
@@ -397,8 +237,6 @@ Resume content:
                     "file_name": uploaded_file.name,
                 }
             except (json.JSONDecodeError, ValueError, AttributeError):
-                # Fallback: JSON mode failed for some reason — still show the
-                # raw response as feedback instead of blocking the user.
                 st.session_state["result"] = {
                     "score": 70,
                     "suggestions": default_suggestions,
